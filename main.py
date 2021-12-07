@@ -2,7 +2,7 @@ import sys
 
 from trading_view_session import TradingViewSession
 from google_sheet import get_google_sheet_value
-from gui_utils import get_row_to_begin
+from gui_utils import get_row_to_begin, show_conclusion, window_error
 import config
 
 
@@ -28,10 +28,12 @@ def main():
     # Init the session (cookies, login etc...)
     trading_view_session = TradingViewSession()
     if not trading_view_session.init_session():
-        sys.exit(1)
+        window_error()
+        return
     # Adds the user to their pack
     for user, (pack_scripts, pack_expiration) in users_to_add.items():
         trading_view_session.handle_new_user(user, pack_scripts, pack_expiration)
+    show_conclusion(trading_view_session.users_not_found, trading_view_session.users_added_successfully, trading_view_session.users_with_unexpected_error)
 
 
 if __name__ == '__main__':

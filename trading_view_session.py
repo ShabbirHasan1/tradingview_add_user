@@ -29,6 +29,9 @@ class TradingViewSession():
         self.session_details = {}
         self.scripts_info = {}
         self.__config_logger()
+        self.users_not_found = set()
+        self.users_with_unexpected_error = set()
+        self.users_added_successfully = set()
 
     def init_session(self):
         try:
@@ -53,11 +56,19 @@ class TradingViewSession():
             expiration_date = self.__get_expiration_date_by_pack(expiration_pack)
             for script_name in config.pack_script_map[script_pack]:
                 self.__invite_user_to_a_script(username_to_add, script_name, expiration_date)
+            self.users_added_successfully.add(username_to_add)
+            return True
         except UserAddError:
+            self.users_with_unexpected_error.add(username_to_add)
             self.logger.debug('Got an exception while adding a user', exc_info=True)
             return False
+        except UserNotFound:
+            self.users_not_found.add(username_to_add)
+            self.logger.debug('User not found', exc_info=True)
+            return False
         except Exception:
-            self.logger.debug('Got an exception while handling new user', exc_info=True)
+            self.users_with_unexpected_error.add(username_to_add)
+            self.logger.debug('Got an unknown exception while handling new user', exc_info=True)
             return False
 
     def __init_scripts_info(self):
@@ -121,7 +132,10 @@ class TradingViewSession():
         if expiration_date is not None:
             data.update({"expiration": expiration_date})
         response = self.http_session.post(url=INVITE_USER_URL, data=data, headers=headers)
-        if response.json()['status'] == 'exists':
+        if 'status' not in response.json():
+            self.logger.debug('Error with user {user}: {error}'.format(user=username_to_add, error=response.json()['detail']))
+            raise UserNotFound('User not found')
+        elif response.json()['status'] == 'exists':
             self.logger.debug('The user {user} already exist for the script {script}'.format(user=username_to_add, script=script_name))
         elif response.json()['status'] == 'ok':
             self.logger.debug('Successfully added the user: {user} to the script {script}'.format(user=username_to_add, script=script_name))
@@ -167,4 +181,8 @@ class LoginError(Exception):
 
 
 class UserAddError(Exception):
+    pass
+
+
+class UserNotFound(Exception):
     pass
