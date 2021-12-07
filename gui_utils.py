@@ -9,7 +9,7 @@ def get_row_to_begin():
     window.withdraw()
     start_raw = simpledialog.askstring(title="GoogleSheet", prompt="Start row:")
     if start_raw is None or start_raw == '':
-        sys.exit(3)
+        sys.exit(0)
     return start_raw
 
 
