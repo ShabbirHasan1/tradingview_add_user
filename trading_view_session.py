@@ -133,7 +133,7 @@ class TradingViewSession():
             data.update({"expiration": expiration_date})
         response = self.http_session.post(url=INVITE_USER_URL, data=data, headers=headers)
         if 'status' not in response.json():
-            self.logger.debug('Error with user {user}: {error}'.format(user=username_to_add, error=response.json()['detail']))
+            self.logger.debug('Error with user {user}: {error}'.format(user=username_to_add, error=str(response.json())))
             raise UserNotFound('User not found')
         elif response.json()['status'] == 'exists':
             self.logger.debug('The user {user} already exist for the script {script}'.format(user=username_to_add, script=script_name))
